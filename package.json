@@ -1,6 +1,6 @@
 {
   "name": "mooncell-workbench",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
@@ -9,8 +9,19 @@
     "start": "node scripts/server.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",
-    "fixtures": "node scripts/fixtures.mjs"
+    "fixtures": "node scripts/fixtures.mjs",
+    "package": "node scripts/package.mjs"
   },
-  "dependencies": {"fflate":"0.8.3", "fast-xml-parser":"5.11.2"},
-  "devDependencies": {"esbuild":"0.28.2", "@playwright/test":"1.64.1"}
+  "dependencies": {
+    "fflate": "0.8.3",
+    "fast-xml-parser": "5.11.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "@playwright/test": "1.64.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/icyaaaww/mooncell.git"
+  }
 }

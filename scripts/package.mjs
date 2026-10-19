@@ -1,0 +1,24 @@
+import {readFile,writeFile,mkdir,readdir,copyFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {zipSync} from 'fflate';
+import {fileURLToPath} from 'node:url';
+process.chdir(fileURLToPath(new URL('..',import.meta.url)));
+const {version}=JSON.parse(await readFile('package.json','utf8'));
+if(execFileSync('git',['status','--porcelain'],{encoding:'utf8'}).trim())throw new Error('请先提交已验证的源码，再生成正式版包');
+const sha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+await mkdir('release',{recursive:true});
+const files={};
+for(const [dest,src] of [['MoonCell.html','dist/MoonCell.html'],['开始使用.md','docs/quickstart.zh-CN.md'],['LICENSE','LICENSE'],['THIRD-PARTY-NOTICES.md','THIRD-PARTY-NOTICES.md'],['README.md','README.md'],['CHANGELOG.md','CHANGELOG.md']])files[dest]=new Uint8Array(await readFile(src));
+async function collect(dir){for(const item of await readdir(dir,{withFileTypes:true})){const name=dir+'/'+item.name;if(item.isDirectory())await collect(name);else files[name]=new Uint8Array(await readFile(name))}}
+await collect('examples');await collect('docs');await collect('third-party');
+files['BUILD.json']=new TextEncoder().encode(JSON.stringify({version,commit:sha,createdAt:new Date().toISOString(),format:'Offline HTML workbench; original XLSX files are never modified'},null,2));
+const app=`MoonCell-${version}.zip`,source=`MoonCell-${version}-source.zip`;
+await writeFile('release/'+app,zipSync(files,{level:9}));
+await copyFile('dist/MoonCell.html','release/MoonCell.html');
+execFileSync('git',['archive','--format=zip',`--prefix=MoonCell-${version}-source/`,'--output=release/'+source,'HEAD']);
+const sums=[];
+for(const name of ['MoonCell.html',app,source])sums.push(createHash('sha256').update(await readFile('release/'+name)).digest('hex')+'  '+name);
+await writeFile('release/SHA256SUMS.txt',sums.join('\n')+'\n');
+console.log(`Packaged MoonCell ${version} at ${sha}`);
+console.log(sums.join('\n'));
