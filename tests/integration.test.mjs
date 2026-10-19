@@ -32,9 +32,10 @@ test('preview matches independent Python arithmetic reference',async()=>{
   assert.equal(result.impacts.length,3);
   for(const impact of result.impacts){assert.equal(impact.error,'');assert.equal(impact.before,ref[impact.address].before);assert.equal(impact.after,ref[impact.address].after)}
 });
-test('overwritten formula visible only with prior version',async()=>{
+test('constant gap is a candidate while prior version confirms formula replacement',async()=>{
   const current=readXlsx(await fixture('overwritten'),translate).cells;
-  assert.equal(core({action:'audit',cells:current}).findings.length,0);
+  const findings=core({action:'audit',cells:current}).findings;
+  assert.equal(findings.length,1);assert.equal(findings[0].rule,'constant_gap');
   const changes=core({action:'compare',before:readXlsx(await fixture('clean'),translate).cells,after:current});
   assert.equal(changes.length,1);assert.equal(changes[0].rule,'formula_replaced');assert.equal(changes[0].address,'F7');
 });
@@ -80,4 +81,31 @@ test('generated reference translations preserve formula structure',()=>{
 test('synthetic display caches remain numeric and match independent totals',()=>{
   assert.equal(demo('broken').cells.find(c=>c.address==='F13').value,'54000');
   assert.equal(demo('clean').cells.find(c=>c.address==='F14').value,'57876');
+});
+
+test('nonstandard workbook and string parts resolve through package relationships',()=>{
+  const bytes=zipSync({
+    '_rels/.rels':strToU8('<Relationships><Relationship Id="root" Type="x/officeDocument" Target="custom/main.xml"/></Relationships>'),
+    'custom/main.xml':strToU8('<workbook xmlns:r="x"><sheets><sheet name="位置" r:id="sheet"/></sheets></workbook>'),
+    'custom/_rels/main.xml.rels':strToU8('<Relationships><Relationship Id="sheet" Target="../data/page.xml"/><Relationship Id="strings" Type="x/sharedStrings" Target="../data/strings.xml"/></Relationships>'),
+    'data/page.xml':strToU8('<worksheet><sheetData><row><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>'),
+    'data/strings.xml':strToU8('<sst><si><t>已解析关系</t></si></sst>')
+  });
+  const b=readXlsx(bytes,translate);assert.equal(b.cells[0].value,'已解析关系');assert.deepEqual(b.sheets,['位置']);
+});
+test('duplicate relationship IDs and invalid cell type fail clearly',()=>{
+  const bytes=zipSync({
+    'xl/workbook.xml':strToU8('<workbook/>'),
+    'xl/_rels/workbook.xml.rels':strToU8('<Relationships><Relationship Id="a"/><Relationship Id="a"/></Relationships>')
+  });
+  assert.throws(()=>readXlsx(bytes,translate),/ID/);
+  assert.throws(()=>readXlsx(archive('<worksheet><sheetData><row><c r="A1" t="bad"><v>1</v></c></row></sheetData></worksheet>'),translate),/类型/);
+});
+test('UTF-16 XML parts import without corrupting non-ASCII values',()=>{
+  const xml='<worksheet><sheetData><row><c r="A1" t="inlineStr"><is><t>中文报价</t></is></c></row></sheetData></worksheet>';
+  const bytes=zipSync({
+    'xl/workbook.xml':strToU8('<workbook xmlns:r="x"><sheets><sheet name="S" r:id="a"/></sheets></workbook>'),
+    'xl/_rels/workbook.xml.rels':strToU8('<Relationships><Relationship Id="a" Target="worksheets/s.xml"/></Relationships>'),
+    'xl/worksheets/s.xml':new Uint8Array(Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from(xml,'utf16le')]))
+  });assert.equal(readXlsx(bytes,translate).cells[0].value,'中文报价');
 });

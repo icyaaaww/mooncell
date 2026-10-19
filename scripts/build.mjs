@@ -9,7 +9,8 @@ const moon=process.env.MOON_HOME?path.join(process.env.MOON_HOME,'bin',process.p
 execFileSync(moon,['build','--target','js','--release'],{stdio:'inherit'});
 await mkdir('dist',{recursive:true});
 await copyFile('_build/js/release/build/bridge/bridge.js','web/core.mjs');
-await build({entryPoints:['web/app.mjs'],bundle:true,format:'iife',target:'es2022',outfile:'dist/app.js',legalComments:'eof',minify:true});
+const worker=await build({entryPoints:['web/worker.mjs'],bundle:true,format:'iife',target:'es2022',write:false,legalComments:'eof',minify:true});
+await build({entryPoints:['web/app.mjs'],bundle:true,format:'iife',target:'es2022',outfile:'dist/app.js',legalComments:'eof',minify:true,define:{__MOONCELL_WORKER__:JSON.stringify(worker.outputFiles[0].text)}});
 const html=await readFile('web/index.html','utf8');
 const css=await readFile('web/style.css','utf8');
 const notices=(await Promise.all((await readdir('third-party')).sort().map(async f=>f+'\n'+await readFile('third-party/'+f,'utf8')))).join('\n\n');

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MoonCell · 表格侦探</title><link rel="stylesheet" href="style.css"></head>
 <body>
-<header><a class="brand" href="#"><span class="mark">M<span>c</span></span><span>MoonCell<small>表格侦探</small></span></a><div class="header-note">让每一处公式，说明白。</div><span class="version">0.1 · 技术预览</span></header>
+<header><a class="brand" href="#"><span class="mark">M<span>c</span></span><span>MoonCell<small>表格侦探</small></span></a><div class="header-note">让每一处公式，说明白。</div><span class="version">1.0 · 正式版</span></header>
 <main>
 <aside class="sidebar">
   <div class="eyebrow">工作簿检查</div><h1>数字正常，<br>公式也对吗？</h1><p class="intro">找到不一致的引用，沿着证据检查。判断权始终在你手里。</p>
@@ -11,18 +11,21 @@
   <div class="side-group"><label for="scenario">先用一个例子</label><select id="scenario"><option value="broken">复制公式时，引用错了上一行</option><option value="clean">没有植入错误的对照表</option><option value="exception">合理例外：单行打九折</option><option value="overwritten">公式被一个固定数字覆盖</option></select><button id="load-demo" class="secondary">加载演示</button><small>所有演示均为合成数据。</small></div>
   <div class="side-group"><label for="baseline">与旧版本比较</label><label class="secondary file-button" for="baseline">选择旧版文件</label><input id="baseline" type="file" accept=".xlsx,.json" hidden><button id="demo-baseline" class="text-button">使用演示的原始版本</button><p id="baseline-name" class="hint">尚未加载旧版</p><label class="check"><input id="aligned" type="checkbox"> 我确认两版的工作表名称及行列位置对应</label><button id="compare" class="secondary" disabled>检查公式变化</button><button id="clear-baseline" class="text-button" hidden>移除旧版</button></div>
   <div class="privacy">无需账号 · 无外部 API<br>支持范围与未分析项会明确列出。</div>
+  <div class="side-group"><label>审核进度</label><button id="save-session" class="secondary">保存审核进度</button><label class="secondary file-button" for="restore-session">恢复审核进度</label><input id="restore-session" type="file" accept=".json" hidden><small>会话含全部导入数据和备注，最大 16 MB。恢复时重新核查证据。不会自动保存到浏览器。</small></div>
 </aside>
 <section class="workspace">
-  <div class="work-heading"><div><div class="eyebrow" id="source-label">合成演示 / 可复现案例</div><h2 id="book-name">正在载入</h2></div><button id="export" class="secondary">导出审查记录 ↓</button></div>
+  <div class="work-heading"><div><div class="eyebrow" id="source-label">合成演示 / 可复现案例</div><h2 id="book-name">正在载入</h2></div><div class="export-actions"><button id="export-html" class="secondary">导出可读报告 ↓</button><button id="export" class="text-button">导出 JSON 记录</button></div></div>
   <div id="status" role="status" aria-live="polite"></div>
+  <button id="cancel" class="secondary" hidden>取消分析</button>
   <div class="metrics" id="metrics"></div>
   <div class="toolbar"><label>工作表 <select id="sheet"></select></label><span id="table-note">单击单元格查看公式</span></div>
+  <div class="navigation"><form id="jump-form"><label for="jump-address">定位</label><input id="jump-address" placeholder="例如 AA120" maxlength="10" autocomplete="off"><button class="secondary">跳转</button></form><div><button id="prev-rows" title="上移 50 行" class="secondary">↑ 50 行</button><button id="next-rows" title="下移 50 行" class="secondary">↓ 50 行</button><button id="prev-cols" title="左移 12 列" class="secondary">← 12 列</button><button id="next-cols" title="右移 12 列" class="secondary">12 列 →</button></div></div>
   <div class="formula-bar"><strong id="active-address">—</strong><span class="fx">fx</span><code id="active-formula">选择一个单元格</code></div>
   <div id="sheet-wrap" class="sheet-wrap"><table id="grid" aria-label="工作表内容"></table></div>
   <div class="legend"><span><i class="dot suspect"></i> 待核查的公式</span><span><i class="dot evidence"></i> 本次诊断的相邻证据</span><span>空缓存值显示为「ƒ」，不冒充重算结果</span></div>
-  <details class="limitations"><summary>分析范围与文件提示 <span id="warning-count"></span></summary><ul id="warnings"></ul><p>首版诊断关注横向或纵向连续区域中，前后各两个公式一致的孤立异常。没有发现异常不代表工作簿正确；尚不检测所有漏算范围和所有业务错误。预览仅支持数值四则运算、百分比与 SUM / AVERAGE / MIN / MAX / COUNT。动态引用、外部工作簿、命名范围和数组公式不保证覆盖。</p></details>
+  <details class="limitations"><summary>分析范围与文件提示 <span id="warning-count"></span></summary><ul id="warnings"></ul><p>诊断关注横向或纵向连续区域中，前后各两个公式一致的孤立异常或固定数字。没有发现异常不代表工作簿正确；尚不检测所有漏算范围和所有业务错误。预览支持数值四则运算、比较、百分比与 SUM / AVERAGE / MIN / MAX / COUNT / IF / ABS / ROUND。ROUND 位数限定 -8 至 8。动态引用、外部工作簿、命名范围和数组公式不保证覆盖。</p></details>
 </section>
-<aside class="inspector"><div class="inspector-heading"><h2>核查队列</h2><span id="finding-count">0</span></div><div class="tabs"><button id="tab-audit" class="active">结构异常</button><button id="tab-diff">版本变化</button></div><div id="findings"></div><section id="detail"></section></aside>
+<aside class="inspector"><div class="inspector-heading"><h2>核查队列</h2><span id="finding-count">0</span></div><div class="tabs"><button id="tab-audit" class="active">结构异常</button><button id="tab-diff">版本变化</button></div><div class="filters"><label for="review-filter">审核状态</label><select id="review-filter"><option value="all">全部</option><option value="pending">待核查</option><option value="confirmed">确认问题</option><option value="exception">合理例外</option></select><input id="finding-query" aria-label="搜索地址、公式或备注" placeholder="搜索地址、公式或备注"></div><div id="findings"></div><section id="detail"></section></aside>
 </main>
 <footer><span>MoonCell / MoonBit 诊断核心</span><span>建议是候选，不是业务结论。原始文件不会被修改。</span></footer>
 <script type="module" src="app.mjs"></script>

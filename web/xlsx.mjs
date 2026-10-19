@@ -13,7 +13,8 @@ function inRange(address,range){
   return !!(a&&b&&p&&p[0]>=Math.min(a[0],b[0])&&p[0]<=Math.max(a[0],b[0])&&p[1]>=Math.min(a[1],b[1])&&p[1]<=Math.max(a[1],b[1]));
 }
 function xml(bytes,label){
-  const s=strFromU8(bytes);
+  const encoding=bytes[0]===0xff&&bytes[1]===0xfe?'utf-16le':bytes[0]===0xfe&&bytes[1]===0xff?'utf-16be':'utf-8';
+  const s=new TextDecoder(encoding,{fatal:true}).decode(bytes);
   if(/<!DOCTYPE|<!ENTITY/i.test(s))fail('不支持带 DTD/实体声明的 XML');
   if(XMLValidator.validate(s)!==true)fail('XML 格式无效：'+label);
   return parser.parse(s);
@@ -48,6 +49,7 @@ export function inspectZip(bytes){
   return names;
 }
 function resolvePart(base,target){
+  if(typeof target!=='string'||!target||target.includes('\\')||/[?#\u0000]/.test(target)||/^[a-z]+:/i.test(target))fail('工作簿部件路径无效');
   if(target.startsWith('/'))target=target.slice(1);else target=base+target;
   const parts=[];
   for(const p of target.split('/')){if(p==='..'){if(!parts.length)fail('工作表路径越界');parts.pop()}else if(p!=='.'&&p!=='')parts.push(p)}
@@ -59,15 +61,33 @@ export function readXlsx(bytes,translate){
   const entries=unzipSync(bytes,{filter:f=>f.name.endsWith('.xml')||f.name.endsWith('.rels')});
   for(const [name,content] of Object.entries(entries)){const meta=names.get(name);if(!meta||meta.size!==content.length||meta.crc!==crc32(content))fail('ZIP 部件完整性检查失败：'+name)}
   const read=name=>{if(!entries[name])fail('缺少工作簿部件：'+name);return xml(entries[name],name)};
-  const workbook=read('xl/workbook.xml').workbook;
-  const rels=array(read('xl/_rels/workbook.xml.rels').Relationships?.Relationship);
-  const shared=entries['xl/sharedStrings.xml']?array(read('xl/sharedStrings.xml').sst?.si).map(rich):[];
+  function relationships(name){
+    const result=array(read(name).Relationships?.Relationship),ids=new Set();
+    for(const r of result){if(typeof r['@Id']!=='string'||!r['@Id']||ids.has(r['@Id']))fail('部件关系 ID 缺失或重复');ids.add(r['@Id'])}
+    return result;
+  }
+  let workbookPart='xl/workbook.xml';
+  if(entries['_rels/.rels']){
+    const offices=relationships('_rels/.rels').filter(r=>String(r['@Type']).endsWith('/officeDocument'));
+    if(offices.length!==1||offices[0]['@TargetMode']==='External')fail('主工作簿关系无效');
+    workbookPart=resolvePart('',offices[0]['@Target']);
+  }
+  const slash=workbookPart.lastIndexOf('/'),base=workbookPart.slice(0,slash+1),filename=workbookPart.slice(slash+1);
+  const workbook=read(workbookPart).workbook;
+  const rels=relationships(base+'_rels/'+filename+'.rels');
+  const stringRels=rels.filter(r=>String(r['@Type']).endsWith('/sharedStrings'));
+  if(stringRels.length>1||stringRels[0]?.['@TargetMode']==='External')fail('共享字符串关系无效');
+  const stringsPart=stringRels.length?resolvePart(base,stringRels[0]['@Target']):base+'sharedStrings.xml';
+  const shared=entries[stringsPart]?array(read(stringsPart).sst?.si).map(rich):[];
+  if(stringRels.length&&!entries[stringsPart])fail('缺少共享字符串部件');
   const cells=[],warnings=[],sheets=[];
   for(const s of array(workbook?.sheets?.sheet)){
     const sheet=String(s['@name']??'');
+    if(!sheet||sheet.length>128||sheets.some(n=>n.toLowerCase()===sheet.toLowerCase()))fail('工作表名称缺失或重复');
+    if(sheets.length>=1000)fail('工作表数量超过 1000');
     const rel=rels.find(r=>r['@Id']===(s['@id']??s['@r:id']));
     if(!rel||rel['@TargetMode']==='External')fail('工作表关系无效');
-    const part=resolvePart('xl/',rel['@Target']);
+    const part=resolvePart(base,rel['@Target']);
     const doc=read(part).worksheet;
     if(!doc)fail('首版只支持普通 worksheet');
     sheets.push(sheet);
@@ -79,6 +99,7 @@ export function readXlsx(bytes,translate){
       const f=c.f;let formula=f===undefined?'':'='+txt(f);
       const ft=typeof f==='object'?f['@t']:undefined;
       let value=txt(c.v),kind='number';
+      if(c['@t']!==undefined&&!['n','s','inlineStr','str','d','b','e'].includes(c['@t']))fail('未知单元格类型：'+c['@t']);
       if(c['@t']==='s'){
         const index=Number(value);if(!Number.isInteger(index)||index<0||index>=shared.length)fail('共享字符串索引无效');
         value=shared[index];kind='text';
