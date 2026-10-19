@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "icyaaaww/mooncell"
+
+import {
+  "moonbitlang/core/json",
+}
+
+// Values
+pub fn audit(Array[Cell]) -> Audit raise FormulaError
+
+pub fn calculate(Array[Cell], String, String) -> Double raise FormulaError
+
+pub fn compare(Array[Cell], Array[Cell]) -> Array[Finding] raise FormulaError
+
+pub fn fingerprint(String, String) -> String raise FormulaError
+
+pub fn preview(Array[Cell], String, String, String) -> Preview raise FormulaError
+
+pub fn translate(String, String, String) -> String raise FormulaError
+
+pub fn validate(Array[Cell]) -> Unit raise FormulaError
+
+// Errors
+pub suberror FormulaError {
+  FormulaError(String)
+}
+
+// Types and methods
+pub struct Audit {
+  findings : Array[Finding]
+  skipped : Array[Finding]
+  formulas : Int
+  analyzed : Int
+} derive(ToJson)
+pub fn Audit::to_json(Self) -> Json
+
+pub(all) struct Cell {
+  sheet : String
+  address : String
+  formula : String
+  value : String
+  kind : String
+} derive(ToJson, @json.FromJson)
+pub fn Cell::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Cell::to_json(Self) -> Json
+
+pub struct Finding {
+  sheet : String
+  address : String
+  rule : String
+  message : String
+  formula : String
+  candidate : String
+  evidence : Array[String]
+} derive(ToJson, @json.FromJson)
+pub fn Finding::from_json(Json, @json.JsonPath) -> Self raise @json.JsonDecodeError
+pub fn Finding::to_json(Self) -> Json
+
+pub struct Impact {
+  sheet : String
+  address : String
+  before : Double?
+  after : Double?
+  error : String
+} derive(ToJson)
+pub fn Impact::to_json(Self) -> Json
+
+pub struct Preview {
+  impacts : Array[Impact]
+  candidate : String
+  inspected : Int
+  unresolved_formulas : Int
+} derive(ToJson)
+pub fn Preview::to_json(Self) -> Json
+
+// Type aliases
+
+// Traits

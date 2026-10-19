@@ -1,0 +1,460 @@
+{
+  "schema": "mooncell.workbook.v1",
+  "name": "演示报价表 · 公式被覆盖",
+  "cells": [
+    {
+      "sheet": "项目报价",
+      "address": "A2",
+      "value": "项目",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B2",
+      "value": "分类",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C2",
+      "value": "单位",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D2",
+      "value": "数量",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E2",
+      "value": "单价",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F2",
+      "value": "金额",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A3",
+      "value": "调研访谈",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B3",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C3",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D3",
+      "value": "2",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E3",
+      "value": "500",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F3",
+      "value": "1000",
+      "formula": "=D3*E3",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A4",
+      "value": "原型设计",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B4",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C4",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D4",
+      "value": "3",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E4",
+      "value": "600",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F4",
+      "value": "1800",
+      "formula": "=D4*E4",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A5",
+      "value": "视觉设计",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B5",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C5",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D5",
+      "value": "4",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E5",
+      "value": "700",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F5",
+      "value": "2800",
+      "formula": "=D5*E5",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A6",
+      "value": "前端页面",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B6",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C6",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D6",
+      "value": "5",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E6",
+      "value": "800",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F6",
+      "value": "4000",
+      "formula": "=D6*E6",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A7",
+      "value": "交互联调",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B7",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C7",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D7",
+      "value": "6",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E7",
+      "value": "900",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F7",
+      "value": "4800",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A8",
+      "value": "数据接入",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B8",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C8",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D8",
+      "value": "7",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E8",
+      "value": "1000",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F8",
+      "value": "7000",
+      "formula": "=D8*E8",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A9",
+      "value": "兼容测试",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B9",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C9",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D9",
+      "value": "8",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E9",
+      "value": "1100",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F9",
+      "value": "8800",
+      "formula": "=D9*E9",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A10",
+      "value": "文档交付",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B10",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C10",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D10",
+      "value": "9",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E10",
+      "value": "1200",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F10",
+      "value": "10800",
+      "formula": "=D10*E10",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A11",
+      "value": "培训支持",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "B11",
+      "value": "服务",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "C11",
+      "value": "项",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "D11",
+      "value": "10",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "E11",
+      "value": "1300",
+      "formula": "",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F11",
+      "value": "13000",
+      "formula": "=D11*E11",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A13",
+      "value": "小计",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F13",
+      "value": "54000",
+      "formula": "=SUM(F3:F11)",
+      "kind": "number"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "A14",
+      "value": "含税总计",
+      "formula": "",
+      "kind": "text"
+    },
+    {
+      "sheet": "项目报价",
+      "address": "F14",
+      "value": "57240",
+      "formula": "=F13*1.06",
+      "kind": "number"
+    }
+  ],
+  "sheets": [
+    "项目报价"
+  ],
+  "warnings": [
+    "合成演示数据；不代表真实客户或实际发现的错误。表格显示输入缓存值，影响预览会重新计算。"
+  ]
+}

@@ -1,0 +1,18 @@
+import {execFileSync} from 'node:child_process';
+import {mkdir,copyFile,readFile,writeFile,readdir} from 'node:fs/promises';
+import {build} from 'esbuild';
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+const root=fileURLToPath(new URL('..',import.meta.url));
+process.chdir(root);
+const moon=process.env.MOON_HOME?path.join(process.env.MOON_HOME,'bin',process.platform==='win32'?'moon.exe':'moon'):'moon';
+execFileSync(moon,['build','--target','js','--release'],{stdio:'inherit'});
+await mkdir('dist',{recursive:true});
+await copyFile('_build/js/release/build/bridge/bridge.js','web/core.mjs');
+await build({entryPoints:['web/app.mjs'],bundle:true,format:'iife',target:'es2022',outfile:'dist/app.js',legalComments:'eof',minify:true});
+const html=await readFile('web/index.html','utf8');
+const css=await readFile('web/style.css','utf8');
+const notices=(await Promise.all((await readdir('third-party')).sort().map(async f=>f+'\n'+await readFile('third-party/'+f,'utf8')))).join('\n\n');
+const js=('/* Bundled licenses\n'+notices.replaceAll('*/','* /')+'\n*/\n'+await readFile('dist/app.js','utf8')).replaceAll('</script','<\\/script');
+await writeFile('dist/MoonCell.html',html.replace('<link rel="stylesheet" href="style.css">',()=>`<style>${css}</style>`).replace('<script type="module" src="app.mjs"></script>',()=>`<script>${js}</script>`));
+console.log('Built dist/MoonCell.html');

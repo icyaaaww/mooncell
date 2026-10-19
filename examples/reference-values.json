@@ -1,0 +1,15 @@
+{
+  "provenance": "Synthetic quotation, independently calculated by Python arithmetic",
+  "F7": {
+    "before": 4800,
+    "after": 5400
+  },
+  "F13": {
+    "before": 54000,
+    "after": 54600
+  },
+  "F14": {
+    "before": 57240.0,
+    "after": 57876.0
+  }
+}

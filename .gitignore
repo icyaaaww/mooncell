@@ -1,0 +1,10 @@
+node_modules/
+_build/
+.moon/
+test-results/
+playwright-report/
+web/core.mjs
+*.log
+.npm-cache/
+release/
+dist/app.js
