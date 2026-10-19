@@ -1,6 +1,6 @@
 ///|
 pub fn dispatch(input : String) -> String {
-  if input.length() > 8000000 {
+  if input.length() > 16000000 {
     return "{\"ok\":false,\"message\":\"请求过大\"}"
   }
   try {

@@ -102,7 +102,12 @@ pub fn audit(cells : Array[Cell]) -> Audit raise FormulaError {
   for c in cells {
     let own = match signatures.get(key(c.sheet, c.address)) {
       Some(s) => s
-      None => continue
+      None =>
+        if c.formula == "" && c.kind == "number" && c.value != "" {
+          "constant"
+        } else {
+          continue
+        }
     }
     let anchor = address_ref(c.address).unwrap()
     for horizontal in [false, true] {
@@ -140,8 +145,19 @@ pub fn audit(cells : Array[Cell]) -> Audit raise FormulaError {
       let evidence = neighbours.map(n => n.address + "  " + n.formula)
       findings.push(
         issue(
-          c, "pattern_outlier", "前后各两个相邻公式结构一致，本格不同；请确认是否为业务例外。",
-          candidate, evidence,
+          c,
+          if c.formula == "" {
+            "constant_gap"
+          } else {
+            "pattern_outlier"
+          },
+          if c.formula == "" {
+            "前后各两个公式结构一致，本格却是固定数字；可能是有意输入，也可能覆盖了公式。"
+          } else {
+            "前后各两个相邻公式结构一致，本格不同；请确认是否为业务例外。"
+          },
+          candidate,
+          evidence,
         ),
       )
       break

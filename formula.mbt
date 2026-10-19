@@ -255,6 +255,19 @@ fn Evaluation::expr(
   expr : Expr,
   sheet : String,
 ) -> Double raise FormulaError {
+  let value = self.eval_expr(expr, sheet)
+  if value.is_nan() || value.is_inf() {
+    fail("计算中间结果不是有限数值")
+  }
+  value
+}
+
+///|
+fn Evaluation::eval_expr(
+  self : Evaluation,
+  expr : Expr,
+  sheet : String,
+) -> Double raise FormulaError {
   self.steps += 1
   if self.steps > 100000 {
     fail("重算预算耗尽")
@@ -294,6 +307,12 @@ fn Evaluation::expr(
           } else {
             a / b
           }
+        "=" => if a == b { 1.0 } else { 0.0 }
+        "<>" => if a != b { 1.0 } else { 0.0 }
+        "<" => if a < b { 1.0 } else { 0.0 }
+        ">" => if a > b { 1.0 } else { 0.0 }
+        "<=" => if a <= b { 1.0 } else { 0.0 }
+        ">=" => if a >= b { 1.0 } else { 0.0 }
         _ => {
           fail("预览暂不支持运算符：" + op)
           0.0
@@ -301,6 +320,50 @@ fn Evaluation::expr(
       }
     }
     Call(name, args) => {
+      if name == "IF" {
+        if args.length() != 3 {
+          fail("IF 需要三个参数")
+        }
+        return if self.expr(args[0], sheet) != 0.0 {
+          self.expr(args[1], sheet)
+        } else {
+          self.expr(args[2], sheet)
+        }
+      }
+      if name == "ABS" {
+        if args.length() != 1 {
+          fail("ABS 需要一个参数")
+        }
+        let value = self.expr(args[0], sheet)
+        return if value < 0.0 { -value } else { value }
+      }
+      if name == "ROUND" {
+        if args.length() != 2 {
+          fail("ROUND 需要两个参数")
+        }
+        let value = self.expr(args[0], sheet)
+        let digits = self.expr(args[1], sheet)
+        if digits < -8.0 ||
+          digits > 8.0 ||
+          digits != digits.to_int().to_double() {
+          fail("ROUND 预览只支持 -8 至 8 的整数位数")
+        }
+        let mut factor = 1.0
+        let n = digits.to_int()
+        for _ in 0..<Int32::abs(n) {
+          factor *= 10.0
+        }
+        let scaled = if n >= 0 { value * factor } else { value / factor }
+        if scaled.abs() > 9007199254740990.0 {
+          fail("ROUND 超出可靠整数精度")
+        }
+        let rounded = if scaled >= 0.0 {
+          (scaled + 0.5).floor()
+        } else {
+          -(-scaled + 0.5).floor()
+        }
+        return if n >= 0 { rounded / factor } else { rounded * factor }
+      }
       if !["SUM", "AVERAGE", "MIN", "MAX", "COUNT"].contains(name) {
         fail("预览暂不支持函数：" + name)
       }

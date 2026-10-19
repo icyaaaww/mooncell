@@ -264,3 +264,73 @@ test "deep nesting rejected before stack overflow" {
   }
   assert_eq(@mooncell.audit([c("A1", formula)]).skipped.length(), 1)
 }
+
+///|
+test "constant within four agreeing formulas has an explicit candidate" {
+  let cells = rows(false).map(x => {
+    if x.address == "C4" {
+      { ..x, formula: "", value: "35", }
+    } else {
+      x
+    }
+  })
+  let report = @mooncell.audit(cells)
+  assert_eq(report.findings.length(), 1)
+  assert_eq(report.findings[0].rule, "constant_gap")
+  let p = @mooncell.preview(cells, "Sheet1", "C4", "=A4*B4")
+  assert_eq(p.impacts[0].before, Some(35.0))
+  assert_eq(p.impacts[0].after, Some(40.0))
+}
+
+///|
+test "conditional numeric evaluation short circuits the unused branch" {
+  assert_eq(
+    @mooncell.calculate([c("A1", "=IF(2>1,ABS(-7),1/0)")], "Sheet1", "A1"),
+    7.0,
+  )
+  assert_eq(
+    @mooncell.calculate([c("A1", "=IF(2=1,1/0,9)")], "Sheet1", "A1"),
+    9.0,
+  )
+}
+
+///|
+test "round numeric subset ties away from zero" {
+  assert_eq(
+    @mooncell.calculate([c("A1", "=ROUND(1.25,1)")], "Sheet1", "A1"),
+    1.3,
+  )
+  assert_eq(
+    @mooncell.calculate([c("A1", "=ROUND(-1.25,1)")], "Sheet1", "A1"),
+    -1.3,
+  )
+  assert_eq(
+    @mooncell.calculate([c("A1", "=ROUND(125,-1)")], "Sheet1", "A1"),
+    130.0,
+  )
+  assert_true(
+    try {
+      ignore(@mooncell.calculate([c("A1", "=ROUND(1,100)")], "Sheet1", "A1"))
+      false
+    } catch {
+      _ => true
+    },
+  )
+}
+
+///|
+test "overflow cannot masquerade as a valid comparison or condition" {
+  for
+    formula in [
+      "=IF(1E308*1E308,1,2)", "=(1E308*1E308)>1", "=ROUND(1,1E308*1E308)",
+    ] {
+    assert_true(
+      try {
+        ignore(@mooncell.calculate([c("A1", formula)], "Sheet1", "A1"))
+        false
+      } catch {
+        _ => true
+      },
+    )
+  }
+}

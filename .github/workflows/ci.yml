@@ -13,7 +13,7 @@ jobs:
           cache: npm
       - name: Install MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- '0.10.15+943464bfa'
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: moon version --all
       - run: moon check --target js --deny-warn
@@ -28,5 +28,5 @@ jobs:
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4
         with:
-          name: mooncell-preview
+          name: mooncell-standalone
           path: dist/MoonCell.html
