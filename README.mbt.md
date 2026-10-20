@@ -1,6 +1,14 @@
 # MoonCell
 
-MoonBit spreadsheet formula structure analysis, explicit version comparison, and bounded candidate-impact preview. Version 1.0.0 is available on GitHub; the package has not yet been published to Mooncakes.
+MoonBit spreadsheet formula structure analysis, explicit version comparison, and bounded candidate-impact preview. Core package `icyaaaww/mooncell@0.1.0` corresponds to the GitHub standalone application v1.0.0. The core uses a separate 0.x version because the publishing tool currently requires it; this is not a downgrade of the application.
+
+Add the core library to your MoonBit project:
+
+```sh
+moon add icyaaaww/mooncell@0.1.0
+```
+
+In your package's `moon.pkg`, import `"icyaaaww/mooncell" @mooncell`. The package contains the MoonBit core, tests and this README; download the offline HTML application from the GitHub repository's releases.
 
 ```mbt check
 ///|

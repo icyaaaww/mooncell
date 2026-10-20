@@ -1,6 +1,8 @@
 name = "icyaaaww/mooncell"
 
-version = "1.0.0"
+// Core library version; the standalone application is v1.0.0.
+
+version = "0.1.0"
 
 readme = "README.mbt.md"
 

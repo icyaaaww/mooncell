@@ -50,6 +50,18 @@ npm start
 
 ## 开发与验证
 
+### 作为 MoonBit 库使用
+
+核心包 `icyaaaww/mooncell@0.1.0` 对应应用正式版 `v1.0.0`。当前发布工具要求包版本为 `0.x.y`，所以库与应用分别编号，应用功能没有降级。
+
+```sh
+moon add icyaaaww/mooncell@0.1.0
+```
+
+在调用包的 `moon.pkg` 中导入 `"icyaaaww/mooncell" @mooncell`，使用 `audit`、`compare`、`preview` 等 API。Mooncakes 包只包含 MoonBit 核心及测试，不包含浏览器界面、XLSX 适配器或 npm 依赖。示例和限制见 `README.mbt.md`。
+
+### 构建应用与测试
+
 本地验证版本：MoonBit `moon 0.1.20261012`，Node.js 24，Windows。构建需要 MoonBit 在 PATH 中，或者设置 `MOON_HOME`。应用运行不需要编译器。CI 固定安装 `0.10.15+943464bfa`，避免编译器更新改变生成接口。
 
 ```sh
@@ -88,6 +100,6 @@ node scripts/cli.mjs compare examples/quotation-clean.xlsx examples/quotation-ov
 
 参考研究是 ExceLint；本版未移植其熵评分算法，也未复制其源代码。不把文件读写、公式计算、图遍历等通用能力当作独创贡献。现有 MoonBit `office.mbt` 和 `sheetcore` 的关联及首版采用独立有限实现的原因见 `docs/provenance.md`。
 
-代码与正式版发布于 [GitHub](https://github.com/icyaaaww/mooncell)。当前没有真实用户采用记录，未进行公开真实工作簿上的效果评估，尚未发布 Mooncakes，也未提交报名。后续优先做真实表格误报验证和成熟基线对照。
+代码与应用正式版见 [GitHub](https://github.com/icyaaaww/mooncell)，核心包文档见 [Mooncakes](https://mooncakes.io/docs/icyaaaww/mooncell)。当前没有真实用户采用记录，未进行公开真实工作簿上的效果评估，也未提交报名。后续优先做真实表格误报验证和成熟基线对照。
 
 Apache-2.0。JavaScript 适配依赖及编译运行时许可证见 `THIRD-PARTY-NOTICES.md`。
