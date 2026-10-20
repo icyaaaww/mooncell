@@ -3,6 +3,7 @@
 ## Unreleased — workbench maintenance
 
 - Keep the active worksheet, selected finding and evidence panel aligned when importing or switching multi-sheet workbooks.
+- Paginate the entire review queue in groups of 50, including findings beyond the previous 200-item display limit; reset the page when filtering.
 
 ## Core package 0.1.0 — 2026-10-20
 

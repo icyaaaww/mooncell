@@ -103,3 +103,19 @@ test('multi-sheet imports open the finding sheet and clear unrelated evidence on
   await page.locator('#sheet').selectOption('封面');await expect(page.locator('#grid')).toContainText('只读说明');await expect(page.locator('#detail')).toBeEmpty();await expect(page.locator('td.evidence')).toHaveCount(0);
   await page.locator('#sheet').selectOption('项目报价');await expect(page.locator('#detail')).toContainText('=D7*E7');await expect(page.locator('#active-address')).toHaveText('F7');
 });
+
+test('all findings remain reachable beyond 200 and filters reset pagination',async({page})=>{
+  const cells=[];
+  for(let group=0;group<205;group++)for(let offset=1;offset<=5;offset++){
+    const row=group*6+offset;
+    cells.push({sheet:'批量核查',address:'C'+row,formula:offset===3?`=A${row}*B${row-1}`:`=A${row}*B${row}`,value:'',kind:'number'});
+  }
+  await page.locator('#upload').setInputFiles({name:'205-findings.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({schema:'mooncell.workbook.v1',cells}))});
+  await expect(page.locator('#book-name')).toHaveText('205-findings.json');await expect(page.locator('#finding-count')).toHaveText('205 / 205');await expect(page.locator('.finding')).toHaveCount(50);await expect(page.locator('#prev-findings')).toBeDisabled();
+  for(let i=0;i<4;i++)await page.locator('#next-findings').click();
+  await expect(page.locator('#finding-page')).toContainText('5 / 5');await expect(page.locator('.finding')).toHaveCount(5);await expect(page.locator('#next-findings')).toBeDisabled();
+  await page.locator('.finding').last().click();await expect(page.locator('#active-address')).toHaveText('C1227');await page.getByRole('button',{name:'确认是问题',exact:true}).click();
+  await page.locator('#review-filter').selectOption('confirmed');await expect(page.locator('.finding')).toHaveCount(1);await expect(page.locator('#finding-pagination')).toBeHidden();
+  await page.locator('#review-filter').selectOption('all');await expect(page.locator('#finding-page')).toContainText('1 / 5');await expect(page.locator('#prev-findings')).toBeDisabled();
+  const pending=page.waitForEvent('download');await page.locator('#export').click();const dl=await pending;const fs=await import('node:fs/promises');const report=JSON.parse(await fs.readFile(await dl.path(),'utf8'));expect(report.items).toHaveLength(205);
+});

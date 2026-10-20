@@ -3,6 +3,8 @@ import {VERSION,MAX_SESSION,findingKey,normalizeBook} from './session.mjs';
 import {labels,reviewReport,htmlReport} from './report.mjs';
 import {demo} from './demo.mjs';
 const $=id=>document.getElementById(id);
+const FINDINGS_PER_PAGE=50;
+let findingPage=0,findingPages=1;
 let book,report,old=null,diff=[],tab='audit',selected=null,sheet='',reviews=new Map(),source='demo',hash='',oldHash='',busy=false,activeAddress='',comparisonPerformed=false;
 const id=f=>findingKey(f,book);
 const core=request=>rpc('core',request);
@@ -17,6 +19,7 @@ async function auditBook(next,name,isDemo,fingerprint='',analyzed=null){
   reviews=new Map();diff=[];tab='audit';selected=report.findings[0]||null;activeAddress=selected?.address||'';if(selected)sheet=selected.sheet;
   old=null;oldHash='';comparisonPerformed=false;$('aligned').checked=false;$('baseline-name').textContent='尚未加载旧版';
   $('review-filter').value='all';$('finding-query').value='';
+  findingPage=0;
   render();status(isDemo?'已载入合成样例。可切换正常对照表和合理例外。':'文件已在本机分析。未修改原始文件。');
 }
 function render(){
@@ -32,16 +35,20 @@ function render(){
 function renderFindings(){
   const filter=$('review-filter').value,query=$('finding-query').value.trim().toLowerCase();
   const findings=list().filter(f=>(filter==='all'||(reviews.get(id(f))?.state||'pending')===filter)&&(!query||(f.sheet+'!'+f.address+' '+f.formula+' '+(reviews.get(id(f))?.note||'')).toLowerCase().includes(query)));$('finding-count').textContent=findings.length+' / '+list().length;
+  findingPages=Math.max(1,Math.ceil(findings.length/FINDINGS_PER_PAGE));findingPage=Math.min(findingPage,findingPages-1);
+  $('finding-pagination').hidden=findings.length<=FINDINGS_PER_PAGE;
+  $('finding-page').textContent=`第 ${findingPage+1} / ${findingPages} 页 · 每页 ${FINDINGS_PER_PAGE} 项`;
+  syncFindingPages();
   $('tab-audit').className=tab==='audit'?'active':'';$('tab-diff').className=tab==='diff'?'active':'';
   $('findings').replaceChildren();
   if(!findings.length){$('findings').append(el('p',list().length?'没有符合当前筛选条件的记录。':tab==='audit'?'当前规则未发现结构异常。这不代表表格没有错误；可加载旧版检查公式是否被替换。':comparisonPerformed?'已完成同地址比较，没有发现公式变化。':old?'完成版本比较后，变化会显示在这里。':'先在左侧加载旧版，并确认行列位置对应。','empty'));return}
-  for(const f of findings.slice(0,200)){
+  for(const f of findings.slice(findingPage*FINDINGS_PER_PAGE,(findingPage+1)*FINDINGS_PER_PAGE)){
     const b=el('button',undefined,'finding'+(selected&&id(f)===id(selected)?' active':''));
     b.append(el('strong',f.sheet+' · '+f.address),el('span',reviews.get(id(f))?.state==='exception'?'合理例外':reviews.get(id(f))?.state==='confirmed'?'确认问题':'待核查','badge'),el('small',labels[f.rule]||f.rule));
     b.onclick=()=>{selected=f;sheet=f.sheet;activeAddress=f.address;render();document.querySelector('td.selected')?.scrollIntoView({block:'nearest',inline:'nearest'})};$('findings').append(b);
   }
-  if(findings.length>200)$('findings').append(el('p','显示前 200 项，请使用地址或备注筛选。导出包含全部记录。','hint'));
 }
+function syncFindingPages(){ $('prev-findings').disabled=busy||findingPage===0;$('next-findings').disabled=busy||findingPage>=findingPages-1 }
 const coord=a=>{const m=/^([A-Z]+)(\d+)$/.exec(a.toUpperCase());if(!m)return [1,1];return [Number(m[2]),[...m[1]].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0)]};
 const colName=n=>{let s='';while(n){s=String.fromCharCode(65+(n-1)%26)+s;n=Math.floor((n-1)/26)}return s};
 function showCell(c){activeAddress=c.address;$('active-address').textContent=c.address;$('active-formula').textContent=c.formula||c.value||'空白单元格'}
@@ -96,7 +103,7 @@ async function load(file){
 function setBusy(value){
   busy=value;document.body.setAttribute('aria-busy',String(value));
   for(const control of document.querySelectorAll('button,input,select,textarea'))if(control.id!=='cancel')control.disabled=value;
-  $('cancel').hidden=!value;syncCompare();
+  $('cancel').hidden=!value;syncCompare();syncFindingPages();
 }
 function guarded(fn){return async()=>{if(busy)return;cancelled=false;setBusy(true);try{await fn()}catch(e){status(e.message,true)}finally{setBusy(false)}}}
 $('cancel').onclick=()=>{cancelled=true;cancelAnalysis()};
@@ -110,8 +117,9 @@ $('clear-baseline').onclick=()=>{old=null;oldHash='';resetComparison();$('baseli
 $('compare').onclick=guarded(async()=>{if(!old||!$('aligned').checked)return;diff=await core({action:'compare',before:old.cells,after:book.cells});comparisonPerformed=true;tab='diff';selected=diff[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render();dirty=true;status('按同名工作表、同一地址比较；没有自动匹配行列移动。')});
 $('load-demo').onclick=guarded(async()=>{const d=demo($('scenario').value);await auditBook(d,d.name,true);dirty=false});
 $('sheet').onchange=()=>{sheet=$('sheet').value;selected=list().find(f=>f.sheet===sheet)||null;activeAddress=selected?.address||'';renderFindings();renderGrid();renderDetail()};
-for(const t of ['audit','diff'])$('tab-'+t).onclick=()=>{tab=t;selected=list()[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render()};
-$('review-filter').onchange=renderFindings;$('finding-query').oninput=renderFindings;
+for(const t of ['audit','diff'])$('tab-'+t).onclick=()=>{tab=t;findingPage=0;selected=list()[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render()};
+$('review-filter').onchange=$('finding-query').oninput=()=>{findingPage=0;renderFindings()};
+for(const [name,offset] of [['prev-findings',-1],['next-findings',1]])$(name).onclick=()=>{findingPage=Math.max(0,Math.min(findingPages-1,findingPage+offset));renderFindings();$('findings').scrollTop=0};
 function jump(address){
   if(!/^[A-Z]{1,3}[1-9][0-9]{0,6}$/.test(address)){status('请输入有效的 A1 地址，例如 F7 或 AA120',true);return}
   const [r,c]=coord(address);if(r>1048576||c>16384){status('地址超出工作表范围',true);return}
@@ -135,7 +143,7 @@ $('restore-session').onchange=guarded(async()=>{
     const r=await rpc('restore',text);
     book=r.book;old=r.old;source=r.source;hash=r.hash;oldHash=r.oldHash;report=r.report;diff=r.diff;comparisonPerformed=r.comparisonPerformed;
     reviews=new Map(r.reviews.map(({key,state,note})=>[key,{state,note}]));$('aligned').checked=r.aligned;tab='audit';selected=report.findings[0]||null;sheet=selected?.sheet||book.sheets[0]||'';activeAddress=selected?.address||'';
-    $('baseline-name').textContent=old?'旧版：'+old.name:'尚未加载旧版';$('review-filter').value='all';$('finding-query').value='';dirty=false;render();status('审核进度已恢复，输入完整性已校验，所有发现已重新计算。');
+    $('baseline-name').textContent=old?'旧版：'+old.name:'尚未加载旧版';$('review-filter').value='all';$('finding-query').value='';findingPage=0;dirty=false;render();status('审核进度已恢复，输入完整性已校验，所有发现已重新计算。');
   }finally{$('restore-session').value=''}
 });
 guarded(async()=>{const d=demo('broken');await auditBook(d,d.name,true)})();
