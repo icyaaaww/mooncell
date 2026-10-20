@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased — workbench maintenance
+
+- Keep the active worksheet, selected finding and evidence panel aligned when importing or switching multi-sheet workbooks.
+
 ## Core package 0.1.0 — 2026-10-20
 
 Published the first Mooncakes package, corresponding to the standalone application v1.0.0. The registry publishing tool currently requires a 0.x package version. Application and core package versions are therefore tracked separately. Only the MoonBit core, tests, license and package README are distributed on Mooncakes; application download assets remain on GitHub. Installation into an independent consumer and two API tests passed on both JS and Wasm-GC.

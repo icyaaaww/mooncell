@@ -1,5 +1,6 @@
 import {test,expect} from '@playwright/test';
 import path from 'node:path';
+import {demo} from '../../web/demo.mjs';
 test.beforeEach(async({page})=>{await page.goto('http://127.0.0.1:4308/MoonCell.html');await expect(page.locator('body')).toHaveAttribute('aria-busy','false')});
 test('demo evidence and independently calculated repair impact',async({page})=>{
   await expect(page.locator('.finding')).toHaveCount(1);
@@ -92,4 +93,13 @@ test('standalone file runs with no network dependency',async({page})=>{
   const {pathToFileURL}=await import('node:url');await page.goto(pathToFileURL(path.resolve('dist/MoonCell.html')).href);
   await expect(page.locator('body')).toHaveAttribute('aria-busy','false');await expect(page.locator('.finding')).toHaveCount(1);
   await page.locator('#preview').click();await expect(page.locator('#preview-result')).toContainText('57,876');
+});
+
+test('multi-sheet imports open the finding sheet and clear unrelated evidence on sheet change',async({page})=>{
+  const book=demo('broken');book.sheets=['封面',...book.sheets];book.cells.unshift({sheet:'封面',address:'A1',formula:'',value:'只读说明',kind:'text'});
+  await page.locator('#upload').setInputFiles({name:'多工作表.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(book))});
+  await expect(page.locator('#book-name')).toHaveText('多工作表.json');
+  await expect(page.locator('#sheet')).toHaveValue('项目报价');await expect(page.locator('td.selected button')).toHaveAttribute('aria-label',/F7/);
+  await page.locator('#sheet').selectOption('封面');await expect(page.locator('#grid')).toContainText('只读说明');await expect(page.locator('#detail')).toBeEmpty();await expect(page.locator('td.evidence')).toHaveCount(0);
+  await page.locator('#sheet').selectOption('项目报价');await expect(page.locator('#detail')).toContainText('=D7*E7');await expect(page.locator('#active-address')).toHaveText('F7');
 });

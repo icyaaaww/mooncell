@@ -14,7 +14,7 @@ async function auditBook(next,name,isDemo,fingerprint='',analyzed=null){
   next=normalizeBook({...next,name});
   const result=analyzed||await core({action:'audit',cells:next.cells});
   book={...next,name};report=result;source=isDemo?'demo':'file';hash=fingerprint;sheet=next.sheets?.[0]||next.cells[0]?.sheet||'';
-  reviews=new Map();diff=[];tab='audit';selected=report.findings[0]||null;activeAddress=selected?.address||'';
+  reviews=new Map();diff=[];tab='audit';selected=report.findings[0]||null;activeAddress=selected?.address||'';if(selected)sheet=selected.sheet;
   old=null;oldHash='';comparisonPerformed=false;$('aligned').checked=false;$('baseline-name').textContent='尚未加载旧版';
   $('review-filter').value='all';$('finding-query').value='';
   render();status(isDemo?'已载入合成样例。可切换正常对照表和合理例外。':'文件已在本机分析。未修改原始文件。');
@@ -102,14 +102,14 @@ function guarded(fn){return async()=>{if(busy)return;cancelled=false;setBusy(tru
 $('cancel').onclick=()=>{cancelled=true;cancelAnalysis()};
 $('upload').onchange=guarded(async()=>{const file=$('upload').files[0];if(!file)return;status('正在后台读取和分析，可取消…');try{const r=await load(file);await auditBook(r.book,file.name,false,r.hash,r.report);dirty=false}finally{$('upload').value=''}});
 $('baseline').onchange=guarded(async()=>{const file=$('baseline').files[0];if(!file)return;try{const r=await load(file);old=r.book;oldHash=r.hash;resetComparison();$('baseline-name').textContent='旧版：'+file.name;status('旧版已载入，请确认位置对应后比较。');dirty=true}finally{$('baseline').value=''}});
-$('aligned').onchange=()=>{if(comparisonPerformed){diff=[];comparisonPerformed=false;keepAuditReviews();tab='audit';selected=report.findings[0]||null;render()}dirty=true;syncCompare()};
+$('aligned').onchange=()=>{if(comparisonPerformed){diff=[];comparisonPerformed=false;keepAuditReviews();tab='audit';selected=report.findings[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render()}dirty=true;syncCompare()};
 function keepAuditReviews(){const valid=new Set(report.findings.map(id));reviews=new Map([...reviews].filter(([k])=>valid.has(k)))}
-function resetComparison(){diff=[];comparisonPerformed=false;keepAuditReviews();$('aligned').checked=false;tab='audit';selected=report.findings[0]||null;render()}
+function resetComparison(){diff=[];comparisonPerformed=false;keepAuditReviews();$('aligned').checked=false;tab='audit';selected=report.findings[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render()}
 $('demo-baseline').onclick=()=>{old=normalizeBook(demo('clean'));old.name='演示原始版本';oldHash='';resetComparison();$('baseline-name').textContent='旧版：合成演示原始版本';syncCompare();dirty=true;status('请确认两版位置对应。实际文件请使用其真实旧版。')};
 $('clear-baseline').onclick=()=>{old=null;oldHash='';resetComparison();$('baseline-name').textContent='尚未加载旧版';dirty=true};
 $('compare').onclick=guarded(async()=>{if(!old||!$('aligned').checked)return;diff=await core({action:'compare',before:old.cells,after:book.cells});comparisonPerformed=true;tab='diff';selected=diff[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render();dirty=true;status('按同名工作表、同一地址比较；没有自动匹配行列移动。')});
 $('load-demo').onclick=guarded(async()=>{const d=demo($('scenario').value);await auditBook(d,d.name,true);dirty=false});
-$('sheet').onchange=()=>{sheet=$('sheet').value;activeAddress='';renderGrid()};
+$('sheet').onchange=()=>{sheet=$('sheet').value;selected=list().find(f=>f.sheet===sheet)||null;activeAddress=selected?.address||'';renderFindings();renderGrid();renderDetail()};
 for(const t of ['audit','diff'])$('tab-'+t).onclick=()=>{tab=t;selected=list()[0]||null;if(selected){sheet=selected.sheet;activeAddress=selected.address}render()};
 $('review-filter').onchange=renderFindings;$('finding-query').oninput=renderFindings;
 function jump(address){
