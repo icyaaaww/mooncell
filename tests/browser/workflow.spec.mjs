@@ -119,3 +119,16 @@ test('all findings remain reachable beyond 200 and filters reset pagination',asy
   await page.locator('#review-filter').selectOption('all');await expect(page.locator('#finding-page')).toContainText('1 / 5');await expect(page.locator('#prev-findings')).toBeDisabled();
   const pending=page.waitForEvent('download');await page.locator('#export').click();const dl=await pending;const fs=await import('node:fs/promises');const report=JSON.parse(await fs.readFile(await dl.path(),'utf8'));expect(report.items).toHaveLength(205);
 });
+
+test('reports carry computed impact evidence and restored workbooks require fresh previews',async({page})=>{
+  const fs=await import('node:fs/promises');
+  async function jsonReport(){const pending=page.waitForEvent('download');await page.locator('#export').click();const dl=await pending;return JSON.parse(await fs.readFile(await dl.path(),'utf8'))}
+  expect((await jsonReport()).items[0].preview).toBeNull();
+  await page.locator('#preview').click();await expect(page.locator('#preview-result')).toContainText('57,876');
+  const report=await jsonReport();expect(report.items[0].preview.impacts.find(i=>i.address==='F14').after).toBe(57876);
+  const htmlPending=page.waitForEvent('download');await page.locator('#export-html').click();const html=await htmlPending;expect(await fs.readFile(await html.path(),'utf8')).toContain('57876');
+  const savePending=page.waitForEvent('download');await page.locator('#save-session').click();const saved=await savePending;
+  await page.locator('#restore-session').setInputFiles(await saved.path());await expect(page.locator('#status')).toContainText('审核进度已恢复');expect((await jsonReport()).items[0].preview).toBeNull();
+  await page.locator('#preview').click();await expect(page.locator('#preview-result')).toContainText('57,876');
+  await page.locator('#load-demo').click();await expect(page.locator('#status')).toContainText('已载入合成样例');expect((await jsonReport()).items[0].preview).toBeNull();
+});

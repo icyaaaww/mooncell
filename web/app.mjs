@@ -5,6 +5,7 @@ import {demo} from './demo.mjs';
 const $=id=>document.getElementById(id);
 const FINDINGS_PER_PAGE=50;
 let findingPage=0,findingPages=1;
+let previews=new Map();
 let book,report,old=null,diff=[],tab='audit',selected=null,sheet='',reviews=new Map(),source='demo',hash='',oldHash='',busy=false,activeAddress='',comparisonPerformed=false;
 const id=f=>findingKey(f,book);
 const core=request=>rpc('core',request);
@@ -20,6 +21,7 @@ async function auditBook(next,name,isDemo,fingerprint='',analyzed=null){
   old=null;oldHash='';comparisonPerformed=false;$('aligned').checked=false;$('baseline-name').textContent='尚未加载旧版';
   $('review-filter').value='all';$('finding-query').value='';
   findingPage=0;
+  previews=new Map();
   render();status(isDemo?'已载入合成样例。可切换正常对照表和合理例外。':'文件已在本机分析。未修改原始文件。');
 }
 function render(){
@@ -81,7 +83,9 @@ function renderDetail(){
     const b=el('button','预览候选对结果的影响 →','primary');b.id='preview';
     const result=el('div');result.id='preview-result';b.onclick=guarded(async()=>{try{
       const preview=await core({action:'preview',cells:book.cells,sheet:f.sheet,address:f.address,candidate:f.candidate});result.replaceChildren();
+      previews.set(id(f),{book,result:preview,computedAt:new Date().toISOString()});
       result.append(el('p','以下数值由 MoonBit 重新计算，未使用文件缓存。未覆盖的公式仍需人工检查。','hint'));
+      result.append(el('p','本次结果将随报告导出；恢复审核进度后需重新预览。','hint'));
       if(preview.unresolved_formulas)result.append(el('p',`${preview.unresolved_formulas} 个公式无法解析，其潜在下游影响未被证明完整。`,'error'));
       for(const p of preview.impacts){const d=el('div',undefined,'impact');d.append(el('strong',p.sheet+'!'+p.address));if(p.error)d.append(el('p','无法重算：'+p.error,'hint'));else{const numbers=el('div',undefined,'numbers');numbers.append(el('span',format(p.before)),el('span','→'),el('strong',format(p.after)));d.append(numbers)}result.append(d)}
     }catch(e){result.replaceChildren(el('p',e.message,'error'))}});box.append(b,result);
@@ -128,7 +132,7 @@ function jump(address){
 $('jump-form').onsubmit=e=>{e.preventDefault();jump($('jump-address').value.trim().toUpperCase())};
 for(const [button,dr,dc] of [['prev-rows',-50,0],['next-rows',50,0],['prev-cols',0,-12],['next-cols',0,12]])$(button).onclick=()=>{const [r,c]=coord(activeAddress||'A1');jump(colName(Math.max(1,Math.min(16384,c+dc)))+Math.max(1,Math.min(1048576,r+dr)))};
 function download(content,name,type){const url=URL.createObjectURL(new Blob([content],{type})),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function state(){return {book,old,report,diff,reviews,source,hash,oldHash,comparisonPerformed,aligned:$('aligned').checked}}
+function state(){return {book,old,report,diff,reviews,previews,source,hash,oldHash,comparisonPerformed,aligned:$('aligned').checked}}
 $('export').onclick=()=>{download(JSON.stringify(reviewReport(state()),null,2),'MoonCell-审查记录.json','application/json');status('已导出审查记录。记录包含公式和证据，请按数据敏感程度保管。')};
 $('export-html').onclick=()=>{download(htmlReport(reviewReport(state())),'MoonCell-审查报告.html','text/html');status('已导出可直接阅读和打印的 HTML 报告。报告含公式和证据。')};
 $('save-session').onclick=guarded(async()=>{
@@ -142,6 +146,7 @@ $('restore-session').onchange=guarded(async()=>{
     const text=await file.text();if(cancelled)throw new Error('已取消读取，保留原工作簿');
     const r=await rpc('restore',text);
     book=r.book;old=r.old;source=r.source;hash=r.hash;oldHash=r.oldHash;report=r.report;diff=r.diff;comparisonPerformed=r.comparisonPerformed;
+    previews=new Map();
     reviews=new Map(r.reviews.map(({key,state,note})=>[key,{state,note}]));$('aligned').checked=r.aligned;tab='audit';selected=report.findings[0]||null;sheet=selected?.sheet||book.sheets[0]||'';activeAddress=selected?.address||'';
     $('baseline-name').textContent=old?'旧版：'+old.name:'尚未加载旧版';$('review-filter').value='all';$('finding-query').value='';findingPage=0;dirty=false;render();status('审核进度已恢复，输入完整性已校验，所有发现已重新计算。');
   }finally{$('restore-session').value=''}

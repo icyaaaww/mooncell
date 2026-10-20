@@ -39,3 +39,16 @@ test('HTML report escapes input, contains notes and does not embed executable sc
   const s=state();s.book.name='<script>alert(1)</script>';s.reviews.set(findingKey(s.report.findings[0],s.book),{state:'confirmed',note:'<img src=x onerror=alert(1)>'});
   const html=htmlReport(reviewReport(s));assert.match(html,/&lt;script&gt;/);assert.match(html,/&lt;img/);assert.doesNotMatch(html,/<script|<img/);assert.match(html,/确认问题/);assert.match(html,/已确认位置对应并比较/);
 });
+
+test('reports include computed impacts only for the same workbook and candidate',()=>{
+  const s=state(),f=s.report.findings[0],result=core({action:'preview',cells:s.book.cells,sheet:f.sheet,address:f.address,candidate:f.candidate});
+  s.previews=new Map([[findingKey(f,s.book),{book:s.book,result,computedAt:'2026-10-20T06:00:00Z'}]]);
+  let report=reviewReport(s);assert.equal(report.items[0].preview.impacts.find(i=>i.address==='F14').after,57876);assert.match(htmlReport(report),/57876/);assert.match(htmlReport(report),/原文件未修改/);
+  s.book=structuredClone(s.book);report=reviewReport(s);assert.equal(report.items[0].preview,null);assert.match(htmlReport(report),/本次未计算预览/);
+  s.previews=new Map([[findingKey(f,s.book),{book:s.book,result:{...result,candidate:'=0'}}]]);assert.equal(reviewReport(s).items[0].preview,null);
+});
+
+test('report preview failures stay explicit and escaped',()=>{
+  const s=state(),f=s.report.findings[0];s.previews=new Map([[findingKey(f,s.book),{book:s.book,computedAt:'2026-10-20T06:00:00Z',result:{candidate:f.candidate,unresolved_formulas:2,impacts:[{sheet:'<script>bad</script>',address:'F14',before:null,after:null,error:'<img src=x> 不支持的函数'}]}}]]);
+  const html=htmlReport(reviewReport(s));assert.match(html,/2 个公式无法解析/);assert.match(html,/&lt;img/);assert.match(html,/不支持的函数/);assert.doesNotMatch(html,/<script|<img/);
+});
