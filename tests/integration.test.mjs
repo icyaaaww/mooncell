@@ -109,3 +109,25 @@ test('UTF-16 XML parts import without corrupting non-ASCII values',()=>{
     'xl/worksheets/s.xml':new Uint8Array(Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from(xml,'utf16le')]))
   });assert.equal(readXlsx(bytes,translate).cells[0].value,'中文报价');
 });
+
+test('missing or nondecimal shared string indices cannot silently select a different cell value',()=>{
+  const shared='<sst><si><t>不得误读为这个文本</t></si><si><t>第二项</t></si></sst>';
+  for(const value of ['', ' ', '0x0', '1e0', '1.0', '-1', '4294967296']){
+    const bytes=archive(`<worksheet><sheetData><row><c r="A1" t="s"><v>${value}</v></c></row></sheetData></worksheet>`,shared);
+    assert.throws(()=>readXlsx(bytes,translate),/共享字符串索引/);
+  }
+  assert.throws(()=>readXlsx(archive('<worksheet><sheetData><row><c r="A1" t="s"/></row></sheetData></worksheet>',shared),translate),/共享字符串索引/);
+  const valid=archive('<worksheet><sheetData><row><c r="A1" t="s"><v> +01 </v></c></row></sheetData></worksheet>',shared);
+  assert.equal(readXlsx(valid,translate).cells[0].value,'第二项');
+});
+
+test('shared formula indices normalize decimal spelling and require explicit valid masters',()=>{
+  const good=archive('<worksheet><sheetData><row><c r="C1"><f t="shared" si="00" ref="C1:C2">A1*B1</f></c></row><row><c r="C2"><f t="shared" si="0"/></c></row></sheetData></worksheet>');
+  assert.equal(readXlsx(good,translate).cells[1].formula,'=A2*B2');
+  for(const attrs of ['ref="C1:C2"','si="x" ref="C1:C2"','si="0"','si="0" ref="D1:D2"']){
+    const bytes=archive(`<worksheet><sheetData><row><c r="C1"><f t="shared" ${attrs}>A1*B1</f></c></row></sheetData></worksheet>`);
+    assert.throws(()=>readXlsx(bytes,translate),/共享公式/);
+  }
+  const duplicate=archive('<worksheet><sheetData><row><c r="C1"><f t="shared" si="00" ref="C1:C2">A1*B1</f></c><c r="C2"><f t="shared" si="0" ref="C1:C2">A2*B2</f></c></row></sheetData></worksheet>');
+  assert.throws(()=>readXlsx(duplicate,translate),/重复/);
+});

@@ -5,6 +5,13 @@ const array=x=>x==null?[]:Array.isArray(x)?x:[x];
 const txt=x=>typeof x==='object'?String(x?.['#text']??''):String(x??'');
 const rich=x=>x?.t!==undefined?txt(x.t):array(x?.r).map(r=>txt(r.t)).join('');
 const fail=s=>{throw new Error(s)};
+function sharedIndex(value,label){
+  const text=txt(value).trim();
+  if(!/^\+?\d+$/.test(text))fail(label+'缺失或不是十进制非负整数');
+  const index=Number(text);
+  if(!Number.isSafeInteger(index)||index>4294967295)fail(label+'超出范围');
+  return index;
+}
 const crcTable=Uint32Array.from({length:256},(_,i)=>{let n=i;for(let b=0;b<8;b++)n=(n&1)?0xedb88320^(n>>>1):n>>>1;return n>>>0});
 const crc32=bytes=>{let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0};
 function inRange(address,range){
@@ -101,7 +108,7 @@ export function readXlsx(bytes,translate){
       let value=txt(c.v),kind='number';
       if(c['@t']!==undefined&&!['n','s','inlineStr','str','d','b','e'].includes(c['@t']))fail('未知单元格类型：'+c['@t']);
       if(c['@t']==='s'){
-        const index=Number(value);if(!Number.isInteger(index)||index<0||index>=shared.length)fail('共享字符串索引无效');
+        const index=sharedIndex(c.v,'共享字符串索引');if(index>=shared.length)fail('共享字符串索引无效');
         value=shared[index];kind='text';
       }else if(c['@t']==='inlineStr'){value=rich(c.is);kind='text'}
       else if(['str','d'].includes(c['@t']))kind='text';
@@ -109,9 +116,10 @@ export function readXlsx(bytes,translate){
       else if(c['@t']==='e')kind='error';
       else if(value==='')kind='blank';
       if(ft==='shared'){
-        const si=String(f['@si']);
+        const si=sharedIndex(f['@si'],'共享公式编号');
         if(txt(f)){
           if(masters.has(si))fail('共享公式主节点重复');
+          if(!inRange(address,f['@ref']))fail('共享公式主节点范围缺失或不包含自身');
           masters.set(si,{address,formula,range:f['@ref']});
         }else pending.push({index:cells.length,si});
       }else if(ft&&ft!=='normal'){kind='unsupported';if(f['@ref'])unsupportedRanges.push(f['@ref']);warnings.push(sheet+'!'+address+'：暂不支持 '+ft+' 公式及其结果区域')}
