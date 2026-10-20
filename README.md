@@ -84,6 +84,12 @@ node scripts/cli.mjs compare examples/quotation-clean.xlsx examples/quotation-ov
 
 `--aligned` 表示调用方明确确认两个文件的工作表及行列位置对应。退出码 0 表示成功分析，不表示文件没有错误；错误输入或执行失败为 1。
 
+主分支后续维护版增加 `--fail-on-findings`，可用于提交前脚本或 CI：发现候选／版本变化时返回 2，仍输出完整 JSON。没有候选返回 0；输入错误返回 1。未分析项仍需检查，不将退出码 0 当作业务正确证明。拼错的选项和多余文件参数会明确报错。
+
+```sh
+node scripts/cli.mjs audit examples/quotation-broken.xlsx --fail-on-findings
+```
+
 ## 结构与来源
 
 | 路径 | 职责 |

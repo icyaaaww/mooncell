@@ -5,6 +5,7 @@
 - Keep the active worksheet, selected finding and evidence panel aligned when importing or switching multi-sheet workbooks.
 - Paginate the entire review queue in groups of 50, including findings beyond the previous 200-item display limit; reset the page when filtering.
 - Validate XLSX shared string/formula indices as explicit decimal integers, normalize leading zeroes and reject invalid shared formula master ranges instead of silently importing incorrect content.
+- Add CLI `--fail-on-findings` for automation (exit 2 with full JSON), strict argument validation, help text and consistent workbook metadata checks.
 
 ## Core package 0.1.0 — 2026-10-20
 
